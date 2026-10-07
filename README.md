@@ -1,119 +1,60 @@
 # MAMA Manage
 ### Smart Apartment Management System (SAMS)
 
-MAMA Manage is a web-based **Smart Apartment Management System** developed to simplify and organize the management of apartments, tenants, rent, utility bills, payments, complaints, maintenance, notices, and tenancy records.
+MAMA Manage is a web-based **Smart Apartment Management System** developed to simplify and organize apartment management through a centralized database-driven platform.
 
-The system is designed around a **relational database** and provides separate dashboards for apartment owners and tenants. It replaces manual record keeping with a centralized system where information can be stored, managed, searched, and monitored more efficiently.
-
----
-
-## 📌 Project Overview
-
-Managing apartments manually can become difficult when dealing with multiple tenants, monthly bills, payments, complaints, maintenance requests, and tenancy information.
-
-MAMA Manage was developed to provide a centralized platform where apartment owners can manage their properties and tenants, while tenants can access their own apartment, billing, payment, complaint, maintenance, and notice information.
-
-The project also demonstrates important **DBMS concepts**, including:
-
-- Relational database design
-- Primary and foreign keys
-- Table relationships
-- Database normalization
-- SQL queries
-- JOIN operations
-- Aggregate functions
-- CRUD operations
-- Data filtering and reporting
-- Role-based access
+The system allows apartment owners and tenants to manage and access information related to apartments, tenancies, billing, payments, complaints, maintenance, notices, and apartment requests.
 
 ---
 
-# ✨ Main Features
+## Overview
 
-## 👤 Owner Dashboard
+MAMA Manage is designed as a practical **DBMS Lab project** using PHP and MySQL. It demonstrates how relational database concepts can be applied to a real-world apartment management system.
 
-The owner dashboard provides an overview of the apartment management system.
+The system provides two main user roles:
 
-Owners can monitor:
-
-- Total apartments
-- Occupied apartments
-- Available apartments
-- Apartments under maintenance
-- Total tenants
-- Monthly bills
-- Payment information
-- Overdue payments
-- Complaints
-- Maintenance activities
-- Apartment requests
-- Notices
-
-The dashboard is scoped to the **currently logged-in owner**, so an owner cannot see another owner's apartment or tenant information.
+- **Owner** — manages apartments, tenants, tenancies, bills, payments, complaints, maintenance, notices, and apartment requests.
+- **Tenant** — views apartment and tenancy information, requests available apartments, checks bills and payments, submits complaints, monitors maintenance, and manages move-out requests.
 
 ---
 
-## 🏢 Apartment Management
+## Key Features
 
-Owners can manage their apartments from a dedicated apartment management section.
+### Owner
+- Apartment management
+- Tenant and tenancy management
+- Apartment request approval/rejection
+- Monthly billing
+- Payment management
+- Overdue payment tracking
+- Complaint management
+- Maintenance and staff management
+- Notice management
+- Dashboard and reports
+- Owner-specific data access
 
-Features include:
+### Tenant
+- Tenant dashboard
+- Apartment and tenancy information
+- Available apartment requests
+- Apartment request history
+- Bills and payment history
+- Complaint submission and tracking
+- Maintenance tracking
+- Notice viewing
+- Move-out request management
 
-- Add apartments
-- Edit apartment information
-- View apartment details
-- Monitor apartment status
-- View monthly rent
-- Track occupancy
-- Manage apartment availability
+### Tenancy & Apartment Workflow
 
-Apartment statuses include:
-
-- `Available`
-- `Occupied`
-- `Under Maintenance`
-
-The system also prevents an occupied apartment from being incorrectly changed to an available apartment through normal apartment editing.
-
----
-
-## 👥 Tenant Management
-
-Owners can manage tenants and their tenancy information from one unified section.
-
-The tenant management section includes:
-
-- Tenant name
-- Phone number
-- Email
-- Identification/reference information
-- Assigned apartment
-- Floor information
-- Move-in date
-- Move-out date
-- Tenancy status
-
-Tenant and tenancy information are connected so that the owner can easily understand which tenant is currently assigned to which apartment.
-
----
-
-## 🏠 Apartment Request System
-
-One of the major features of MAMA Manage is the apartment request workflow.
-
-Tenants can view available apartments and send an apartment request directly from the system.
-
-The workflow is:
+The system manages the complete apartment request and tenancy process:
 
 ```text
-Tenant views available apartment
-            ↓
-Tenant sends request
-            ↓
-Owner receives request
-            ↓
-Owner approves or rejects
-            ↓
-If approved → Tenancy is created
-            ↓
-Apartment becomes Occupied
+Available Apartment
+        ↓
+Tenant Request
+        ↓
+Owner Approval
+        ↓
+Tenancy Created
+        ↓
+Apartment Occupied
