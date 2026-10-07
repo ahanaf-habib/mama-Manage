@@ -1,0 +1,162 @@
+-- ============================================================
+-- MAMA Manage (Smart Apartment Management System)
+-- COMPLETE IMPORT-READY DATABASE
+-- Final schema, relationships and sample data
+-- ============================================================
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET time_zone = "+06:00";
+SET FOREIGN_KEY_CHECKS = 0;
+CREATE DATABASE IF NOT EXISTS `smart_apartment_management_system`   DEFAULT CHARACTER SET utf8mb4   COLLATE utf8mb4_general_ci;
+USE `smart_apartment_management_system`;
+-- ------------------------------------------------------------
+-- Drop existing tables so this file can be imported cleanly
+-- ------------------------------------------------------------
+DROP TABLE IF EXISTS `move_out_requests`;
+DROP TABLE IF EXISTS `apartment_requests`;
+DROP TABLE IF EXISTS `payments`;
+DROP TABLE IF EXISTS `bills`;
+DROP TABLE IF EXISTS `maintenance_requests`;
+DROP TABLE IF EXISTS `complaints`;
+DROP TABLE IF EXISTS `notices`;
+DROP TABLE IF EXISTS `tenancies`;
+DROP TABLE IF EXISTS `apartments`;
+DROP TABLE IF EXISTS `staff`;
+DROP TABLE IF EXISTS `tenants`;
+DROP TABLE IF EXISTS `owners`;
+-- ------------------------------------------------------------
+-- 1. OWNERS
+-- ------------------------------------------------------------
+
+CREATE TABLE `owners` (   `owner_id` int(11) NOT NULL AUTO_INCREMENT,   `owner_name` varchar(100) NOT NULL,   `phone` varchar(30) NOT NULL,   `email` varchar(150) NOT NULL,   `username` varchar(50) NOT NULL,   `password` varchar(255) NOT NULL,   PRIMARY KEY (`owner_id`),   UNIQUE KEY `email` (`email`),   UNIQUE KEY `username` (`username`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+-- ------------------------------------------------------------
+-- 2. TENANTS
+-- ------------------------------------------------------------
+
+CREATE TABLE `tenants` (   `tenant_id` int(11) NOT NULL AUTO_INCREMENT,   `tenant_name` varchar(100) NOT NULL,   `phone` varchar(30) NOT NULL,   `email` varchar(150) NOT NULL,   `emergency_contact` varchar(100) DEFAULT NULL,   `id_reference` varchar(100) NOT NULL,   `username` varchar(50) NOT NULL,   `password` varchar(255) NOT NULL,   PRIMARY KEY (`tenant_id`),   UNIQUE KEY `email` (`email`),   UNIQUE KEY `id_reference` (`id_reference`),   UNIQUE KEY `username` (`username`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- 3. STAFF
+-- ------------------------------------------------------------
+
+CREATE TABLE `staff` (   `staff_id` int(11) NOT NULL AUTO_INCREMENT,   `staff_name` varchar(100) NOT NULL,   `phone` varchar(30) NOT NULL,   `experties` varchar(150) NOT NULL,   PRIMARY KEY (`staff_id`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+-- 4. APARTMENTS
+-- ------------------------------------------------------------
+
+CREATE TABLE `apartments` (   `apartment_id` int(11) NOT NULL AUTO_INCREMENT,   `owner_id` int(11) NOT NULL,   `apartment_number` varchar(20) NOT NULL,   `floor_level` int(11) NOT NULL,   `description` text DEFAULT NULL,   `monthly_rent` decimal(10,2) NOT NULL,   `status` enum('Available','Occupied','Under Maintenance') NOT NULL DEFAULT 'Available',   PRIMARY KEY (`apartment_id`),   KEY `owner_id` (`owner_id`),   CONSTRAINT `apartments_ibfk_1`     FOREIGN KEY (`owner_id`) REFERENCES `owners` (`owner_id`)     ON DELETE CASCADE ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+-- ------------------------------------------------------------
+
+-- ------------------------------------------------------------
+-- 5. TENANCIES
+-- ------------------------------------------------------------
+
+CREATE TABLE `tenancies` (   `tenancy_id` int(11) NOT NULL AUTO_INCREMENT,   `tenant_id` int(11) NOT NULL,   `apartment_id` int(11) NOT NULL,   `move_in_date` date NOT NULL,   `move_out_date` date DEFAULT NULL,   `tenancy_status` enum('Active','Ended') NOT NULL DEFAULT 'Active',   PRIMARY KEY (`tenancy_id`),   KEY `tenant_id` (`tenant_id`),   KEY `apartment_id` (`apartment_id`),   CONSTRAINT `tenancies_ibfk_1`     FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`tenant_id`)     ON DELETE CASCADE,   CONSTRAINT `tenancies_ibfk_2`     FOREIGN KEY (`apartment_id`) REFERENCES `apartments` (`apartment_id`)     ON DELETE CASCADE ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+-- ------------------------------------------------------------
+-- 6. BILLS
+-- ------------------------------------------------------------
+
+CREATE TABLE `bills` (   `bill_id` int(11) NOT NULL AUTO_INCREMENT,   `tenancy_id` int(11) NOT NULL,   `billing_month` varchar(20) NOT NULL,   `issue_date` date NOT NULL,   `due_date` date NOT NULL,   `rent_amount` decimal(10,2) NOT NULL,   `utility_charge` decimal(10,2) NOT NULL DEFAULT 0.00,   `maintenance_service_charge` decimal(10,2) NOT NULL DEFAULT 0.00,   `other_charge` decimal(10,2) NOT NULL DEFAULT 0.00,   `total_amount` decimal(10,2) NOT NULL,   `bill_status` enum('Paid','Partially Paid','Unpaid','Overdue') NOT NULL DEFAULT 'Unpaid',   PRIMARY KEY (`bill_id`),   UNIQUE KEY `tenancy_month` (`tenancy_id`,`billing_month`),   KEY `tenancy_id` (`tenancy_id`),   CONSTRAINT `bills_ibfk_1`     FOREIGN KEY (`tenancy_id`) REFERENCES `tenancies` (`tenancy_id`)     ON DELETE CASCADE ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+-- ------------------------------------------------------------
+-- 7. PAYMENTS
+-- ------------------------------------------------------------
+
+CREATE TABLE `payments` (   `payment_id` int(11) NOT NULL AUTO_INCREMENT,   `bill_id` int(11) NOT NULL,   `payment_amount` decimal(10,2) NOT NULL,   `payment_date` date NOT NULL,   `payment_method` enum('Cash','bKash','Bank Transfer') NOT NULL,   `transaction_reference_id` varchar(100) DEFAULT NULL,   `payment_status` enum('Completed','Pending','Failed') NOT NULL DEFAULT 'Completed',   PRIMARY KEY (`payment_id`),   KEY `bill_id` (`bill_id`),   CONSTRAINT `payments_ibfk_1`     FOREIGN KEY (`bill_id`) REFERENCES `bills` (`bill_id`)     ON DELETE CASCADE ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+-- ------------------------------------------------------------
+-- 8. COMPLAINTS
+-- ------------------------------------------------------------
+
+CREATE TABLE `complaints` (   `complaint_id` int(11) NOT NULL AUTO_INCREMENT,   `tenant_id` int(11) NOT NULL,   `apartment_id` int(11) NOT NULL,   `category` varchar(100) NOT NULL,   `description` text NOT NULL,   `priority` enum('Low','Medium','High') NOT NULL DEFAULT 'Medium',   `submission_date` date NOT NULL,   `complaint_status` enum('Pending','Assigned','In Progress','Resolved') NOT NULL DEFAULT 'Pending',   PRIMARY KEY (`complaint_id`),   KEY `tenant_id` (`tenant_id`),   KEY `apartment_id` (`apartment_id`),   CONSTRAINT `complaints_ibfk_1`     FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`tenant_id`)     ON DELETE CASCADE,   CONSTRAINT `complaints_ibfk_2`     FOREIGN KEY (`apartment_id`) REFERENCES `apartments` (`apartment_id`)     ON DELETE CASCADE ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+-- ------------------------------------------------------------
+-- 9. MAINTENANCE_REQUESTS
+-- ------------------------------------------------------------
+
+CREATE TABLE `maintenance_requests` (   `maintenance_id` int(11) NOT NULL AUTO_INCREMENT,   `complaint_id` int(11) NOT NULL,   `staff_id` int(11) DEFAULT NULL,   `estimated_cost` decimal(10,2) NOT NULL DEFAULT 0.00,   `maintenance_status` enum('Assigned','In Progress','Completed') NOT NULL DEFAULT 'Assigned',   `completion_date` date DEFAULT NULL,   `maintenance_notes` text DEFAULT NULL,   PRIMARY KEY (`maintenance_id`),   KEY `complaint_id` (`complaint_id`),   KEY `staff_id` (`staff_id`),   CONSTRAINT `maintenance_requests_ibfk_1`     FOREIGN KEY (`complaint_id`) REFERENCES `complaints` (`complaint_id`)     ON DELETE CASCADE,   CONSTRAINT `maintenance_requests_ibfk_2`     FOREIGN KEY (`staff_id`) REFERENCES `staff` (`staff_id`)     ON DELETE SET NULL ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+-- ------------------------------------------------------------
+-- 10. NOTICES
+-- ------------------------------------------------------------
+
+CREATE TABLE `notices` (   `notice_id` int(11) NOT NULL AUTO_INCREMENT,   `owner_id` int(11) NOT NULL,   `message_content` text NOT NULL,   `published_at` timestamp NOT NULL DEFAULT current_timestamp(),   `target_type` enum('Everyone','Apartment','Floor') NOT NULL DEFAULT 'Everyone',   `apartment_id` int(11) DEFAULT NULL,   `floor_number` int(11) DEFAULT NULL,   PRIMARY KEY (`notice_id`),   KEY `owner_id` (`owner_id`),   KEY `apartment_id` (`apartment_id`),   CONSTRAINT `notices_ibfk_1`     FOREIGN KEY (`owner_id`) REFERENCES `owners` (`owner_id`)     ON DELETE CASCADE,   CONSTRAINT `notices_ibfk_2`     FOREIGN KEY (`apartment_id`) REFERENCES `apartments` (`apartment_id`)     ON DELETE CASCADE ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+-- ------------------------------------------------------------
+-- ------------------------------------------------------------
+-- 11. APARTMENT_REQUESTS
+-- ------------------------------------------------------------
+
+CREATE TABLE `apartment_requests` (   `request_id` int(11) NOT NULL AUTO_INCREMENT,   `tenant_id` int(11) NOT NULL,   `apartment_id` int(11) NOT NULL,   `owner_id` int(11) NOT NULL,   `requested_at` datetime NOT NULL DEFAULT current_timestamp(),   `responded_at` datetime DEFAULT NULL,   `status` enum('Pending','Approved','Rejected') NOT NULL DEFAULT 'Pending',   PRIMARY KEY (`request_id`),   KEY `tenant_id` (`tenant_id`),   KEY `apartment_id` (`apartment_id`),   KEY `owner_id` (`owner_id`),   CONSTRAINT `apartment_requests_ibfk_1`     FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`tenant_id`)     ON DELETE CASCADE,   CONSTRAINT `apartment_requests_ibfk_2`     FOREIGN KEY (`apartment_id`) REFERENCES `apartments` (`apartment_id`)     ON DELETE CASCADE,   CONSTRAINT `apartment_requests_ibfk_3`     FOREIGN KEY (`owner_id`) REFERENCES `owners` (`owner_id`)     ON DELETE CASCADE ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+-- ------------------------------------------------------------
+-- 12. MOVE_OUT_REQUESTS
+-- ------------------------------------------------------------
+
+CREATE TABLE `move_out_requests` (   `request_id` int(11) NOT NULL AUTO_INCREMENT,   `tenancy_id` int(11) NOT NULL,   `tenant_id` int(11) NOT NULL,   `owner_id` int(11) NOT NULL,   `requested_at` datetime NOT NULL DEFAULT current_timestamp(),   `proposed_move_out_date` date NOT NULL,   `responded_at` datetime DEFAULT NULL,   `status` enum('Pending','Approved','Rejected','Cancelled') NOT NULL DEFAULT 'Pending',   `initiated_by` enum('Tenant','Owner') NOT NULL DEFAULT 'Tenant',   PRIMARY KEY (`request_id`),   KEY `tenancy_id` (`tenancy_id`),   KEY `tenant_id` (`tenant_id`),   KEY `owner_id` (`owner_id`),   CONSTRAINT `move_out_requests_ibfk_1`     FOREIGN KEY (`tenancy_id`) REFERENCES `tenancies` (`tenancy_id`)     ON DELETE CASCADE,   CONSTRAINT `move_out_requests_ibfk_2`     FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`tenant_id`)     ON DELETE CASCADE,   CONSTRAINT `move_out_requests_ibfk_3`     FOREIGN KEY (`owner_id`) REFERENCES `owners` (`owner_id`)     ON DELETE CASCADE ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+-- ============================================================
+-- SAMPLE DATA
+-- ------------------------------------------------------------
+-- Demo password for all sample accounts: 1234
+-- These credentials are for local/demo use and match the current project login.
+-- ============================================================
+-- ------------------------------------------------------------
+-- OWNERS (10)
+-- ------------------------------------------------------------
+INSERT INTO `owners` (`owner_id`,`owner_name`,`phone`,`email`,`username`,`password`) VALUES (1,'Ahsan Rahman','01711000001','ahsan.rahman@example.com','ahsan_owner','1234'), (2,'Nadia Karim','01711000002','nadia.karim@example.com','nadia_owner','1234'), (3,'Fahim Chowdhury','01711000003','fahim.chowdhury@example.com','fahim_owner','1234'), (4,'Samira Ahmed','01711000004','samira.ahmed@example.com','samira_owner','1234'), (5,'Tanvir Hasan','01711000005','tanvir.hasan@example.com','tanvir_owner','1234'), (6,'Rafiq Islam','01711000006','rafiq.islam@example.com','rafiq_owner','1234'), (7,'Maliha Sultana','01711000007','maliha.sultana@example.com','maliha_owner','1234'), (8,'Imran Hossain','01711000008','imran.hossain@example.com','imran_owner','1234'), (9,'Sadia Noor','01711000009','sadia.noor@example.com','sadia_owner','1234'), (10,'Arif Mahmud','01711000010','arif.mahmud@example.com','arif_owner','1234');
+-- ------------------------------------------------------------
+-- STAFF (10)
+-- ------------------------------------------------------------
+INSERT INTO `staff` (`staff_id`,`staff_name`,`phone`,`experties`) VALUES (1,'Rashed Ahmed','01812000001','Electrical'), (2,'Mehedi Hasan','01812000002','Plumbing'), (3,'Sakib Khan','01812000003','Air Conditioning'), (4,'Nayeem Rahman','01812000004','Carpentry'), (5,'Jahidul Islam','01812000005','Painting'), (6,'Shuvo Das','01812000006','Electrical'), (7,'Masud Rana','01812000007','Plumbing'), (8,'Fardin Hossain','01812000008','General Maintenance'), (9,'Tareq Aziz','01812000009','Generator & Power'), (10,'Rony Mia','01812000010','Security Systems');
+-- ------------------------------------------------------------
+-- APARTMENTS (10)
+-- Owners 1-5 have multiple units;
+owner 2 owns units 7-10.
+-- ------------------------------------------------------------
+INSERT INTO `apartments` (`apartment_id`,`owner_id`,`apartment_number`,`floor_level`,`description`,`monthly_rent`,`status`) VALUES (1,1,'A-101',1,'One bedroom apartment with balcony',18000.00,'Occupied'), (2,1,'A-102',1,'Two bedroom apartment near stairway',22000.00,'Occupied'), (3,1,'A-201',2,'Bright two bedroom apartment',24000.00,'Occupied'), (4,1,'A-202',2,'Three bedroom family apartment',28000.00,'Occupied'), (5,1,'A-301',3,'Premium apartment with city view',32000.00,'Occupied'), (6,2,'B-101',1,'Compact apartment for small family',17000.00,'Available'), (7,2,'B-102',1,'Modern apartment with balcony',21000.00,'Occupied'), (8,2,'B-201',2,'Large two bedroom apartment',25000.00,'Occupied'), (9,2,'B-202',2,'Family apartment with parking',27000.00,'Occupied'), (10,3,'C-101',1,'Apartment currently being renovated',19000.00,'Under Maintenance');
+-- ------------------------------------------------------------
+-- TENANTS (10)
+-- ------------------------------------------------------------
+INSERT INTO `tenants` (`tenant_id`,`tenant_name`,`phone`,`email`,`emergency_contact`,`id_reference`,`username`,`password`) VALUES (1,'Md. Rakib Hasan','01913000001','rakib.hasan@example.com','01913000101','NID-100001','rakib_tenant','1234'), (2,'Nusrat Jahan','01913000002','nusrat.jahan@example.com','01913000102','NID-100002','nusrat_tenant','1234'), (3,'Siam Ahmed','01913000003','siam.ahmed@example.com','01913000103','NID-100003','siam_tenant','1234'), (4,'Tasnim Akter','01913000004','tasnim.akter@example.com','01913000104','NID-100004','tasnim_tenant','1234'), (5,'Adnan Karim','01913000005','adnan.karim@example.com','01913000105','NID-100005','adnan_tenant','1234'), (6,'Mim Rahman','01913000006','mim.rahman@example.com','01913000106','NID-100006','mim_tenant','1234'), (7,'Sabbir Hossain','01913000007','sabbir.hossain@example.com','01913000107','NID-100007','sabbir_tenant','1234'), (8,'Jannatul Ferdous','01913000008','jannatul.ferdous@example.com','01913000108','NID-100008','jannatul_tenant','1234'), (9,'Shakil Ahmed','01913000009','shakil.ahmed@example.com','01913000109','NID-100009','shakil_tenant','1234'), (10,'Raisa Islam','01913000010','raisa.islam@example.com','01913000110','NID-100010','raisa_tenant','1234');
+-- ------------------------------------------------------------
+-- TENANCIES (10)
+-- ------------------------------------------------------------
+INSERT INTO `tenancies` (`tenancy_id`,`tenant_id`,`apartment_id`,`move_in_date`,`move_out_date`,`tenancy_status`) VALUES (1,1,1,'2026-01-05',NULL,'Active'), (2,2,2,'2026-02-01','2026-10-25','Active'), (3,3,3,'2026-03-10',NULL,'Active'), (4,4,4,'2026-01-15','2026-10-28','Active'), (5,5,5,'2026-04-01',NULL,'Active'), (6,6,7,'2026-02-15',NULL,'Active'), (7,7,8,'2026-03-01','2026-10-30','Active'), (8,8,9,'2026-05-01',NULL,'Active'), (9,9,6,'2025-05-01','2026-05-31','Ended'), (10,10,10,'2025-06-01','2026-08-31','Ended');
+-- ------------------------------------------------------------
+-- BILLS (10)
+-- ------------------------------------------------------------
+INSERT INTO `bills` (`bill_id`,`tenancy_id`,`billing_month`,`issue_date`,`due_date`,`rent_amount`,`utility_charge`,`maintenance_service_charge`,`other_charge`,`total_amount`,`bill_status`) VALUES (1,1,'September 2026','2026-09-01','2026-09-10',18000.00,1200.00,500.00,0.00,19700.00,'Paid'), (2,2,'September 2026','2026-09-01','2026-09-10',22000.00,1500.00,500.00,300.00,24300.00,'Partially Paid'), (3,3,'September 2026','2026-09-01','2026-09-10',24000.00,1300.00,0.00,0.00,25300.00,'Paid'), (4,4,'September 2026','2026-09-01','2026-09-10',28000.00,1700.00,600.00,0.00,30300.00,'Overdue'), (5,5,'September 2026','2026-09-01','2026-09-10',32000.00,1800.00,0.00,500.00,34300.00,'Unpaid'), (6,6,'September 2026','2026-09-01','2026-09-10',21000.00,1100.00,400.00,0.00,22500.00,'Paid'), (7,7,'September 2026','2026-09-01','2026-09-10',25000.00,1400.00,500.00,0.00,26900.00,'Partially Paid'), (8,8,'September 2026','2026-09-01','2026-09-10',27000.00,1600.00,0.00,400.00,29000.00,'Overdue'), (9,9,'May 2026','2026-05-01','2026-05-10',17000.00,900.00,0.00,0.00,17900.00,'Paid'), (10,10,'August 2026','2026-08-01','2026-08-10',19000.00,1000.00,700.00,0.00,20700.00,'Paid');
+-- ------------------------------------------------------------
+-- PAYMENTS (10)
+-- ------------------------------------------------------------
+INSERT INTO `payments` (`payment_id`,`bill_id`,`payment_amount`,`payment_date`,`payment_method`,`transaction_reference_id`,`payment_status`) VALUES (1,1,19700.00,'2026-09-05','bKash','BKASH-SEP-001','Completed'), (2,2,15000.00,'2026-09-07','Bank Transfer','BANK-SEP-002','Completed'), (3,3,25300.00,'2026-09-06','Cash','CASH-SEP-003','Completed'), (4,4,10000.00,'2026-09-15','bKash','BKASH-SEP-004','Completed'), (5,6,22500.00,'2026-09-04','Bank Transfer','BANK-SEP-006','Completed'), (6,7,12000.00,'2026-09-08','bKash','BKASH-SEP-007','Completed'), (7,9,17900.00,'2026-05-07','Cash','CASH-MAY-009','Completed'), (8,10,20700.00,'2026-08-06','Bank Transfer','BANK-AUG-010','Completed'), (9,2,3000.00,'2026-09-12','bKash','BKASH-SEP-002B','Pending'), (10,5,5000.00,'2026-09-11','bKash','BKASH-SEP-005','Failed');
+-- ------------------------------------------------------------
+-- COMPLAINTS (10)
+-- ------------------------------------------------------------
+INSERT INTO `complaints` (`complaint_id`,`tenant_id`,`apartment_id`,`category`,`description`,`priority`,`submission_date`,`complaint_status`) VALUES (1,1,1,'Plumbing','Kitchen sink is leaking and needs inspection.','Medium','2026-09-03','Resolved'), (2,2,2,'Electrical','Bedroom light keeps flickering.','High','2026-09-05','In Progress'), (3,3,3,'Air Conditioning','AC is making unusual noise during operation.','Medium','2026-09-07','Assigned'), (4,4,4,'Plumbing','Bathroom water pressure is very low.','High','2026-09-08','Pending'), (5,5,5,'Painting','Wall paint is peeling near the balcony.','Low','2026-09-10','Resolved'), (6,6,7,'Electrical','Power socket in living room is damaged.','High','2026-09-11','In Progress'), (7,7,8,'General','Main door lock is becoming difficult to use.','Medium','2026-09-12','Assigned'), (8,8,9,'Plumbing','Water tap in kitchen is dripping continuously.','Low','2026-09-14','Resolved'), (9,9,6,'Cleaning','Common corridor cleaning was missed.','Low','2026-05-15','Resolved'), (10,10,10,'Electrical','Ceiling fan stopped working before move-out.','Medium','2026-08-12','Resolved');
+-- ------------------------------------------------------------
+-- MAINTENANCE REQUESTS (10)
+-- ------------------------------------------------------------
+INSERT INTO `maintenance_requests` (`maintenance_id`,`complaint_id`,`staff_id`,`estimated_cost`,`maintenance_status`,`completion_date`,`maintenance_notes`) VALUES (1,1,2,1200.00,'Completed','2026-09-05','Replaced worn sink pipe and seal.'), (2,2,1,800.00,'In Progress',NULL,'Electrical connection is being inspected.'), (3,3,3,2500.00,'Assigned',NULL,'AC technician scheduled for inspection.'), (4,4,7,600.00,'Assigned',NULL,'Plumbing inspection pending.'), (5,5,5,1000.00,'Completed','2026-09-13','Repainted affected wall section.'), (6,6,6,900.00,'In Progress',NULL,'Socket and wiring replacement underway.'), (7,7,10,700.00,'Assigned',NULL,'Lock replacement parts requested.'), (8,8,2,500.00,'Completed','2026-09-16','Replaced leaking tap washer.'), (9,9,8,300.00,'Completed','2026-05-16','Corridor cleaned and inspected.'), (10,10,1,1100.00,'Completed','2026-08-14','Fan capacitor replaced.');
+-- ------------------------------------------------------------
+-- NOTICES (10)
+-- ------------------------------------------------------------
+INSERT INTO `notices` (`notice_id`,`owner_id`,`message_content`,`published_at`,`target_type`,`apartment_id`,`floor_number`) VALUES (1,1,'Monthly rent payments are due by the 10th of each month.','2026-09-01 09:00:00','Everyone',NULL,NULL), (2,1,'Water supply maintenance will take place on the first floor this weekend.','2026-09-06 12:00:00','Floor',NULL,1), (3,1,'Please keep the main entrance clear at all times.','2026-09-08 10:00:00','Everyone',NULL,NULL), (4,1,'A scheduled maintenance inspection will be conducted in Apartment A-202.','2026-09-12 15:00:00','Apartment',4,NULL), (5,2,'Parking spaces will be cleaned on Friday morning.','2026-09-10 09:30:00','Everyone',NULL,NULL), (6,2,'Lift maintenance is scheduled for the second floor.','2026-09-13 11:00:00','Floor',NULL,2), (7,2,'Please report any water leakage immediately.','2026-09-16 08:30:00','Everyone',NULL,NULL), (8,3,'Apartment C-101 is temporarily unavailable due to renovation.','2026-09-15 14:00:00','Apartment',10,NULL), (9,1,'Your tenancy is scheduled to end on 28 October 2026. Please plan accordingly.','2026-09-20 10:00:00','Apartment',4,NULL), (10,2,'A planned owner-scheduled move-out has been recorded for the current tenancy.','2026-09-21 10:00:00','Apartment',8,NULL);
+-- ------------------------------------------------------------
+-- APARTMENT REQUESTS (10)
+-- ------------------------------------------------------------
+INSERT INTO `apartment_requests` (`request_id`,`tenant_id`,`apartment_id`,`owner_id`,`requested_at`,`responded_at`,`status`) VALUES (1,2,6,2,'2026-09-20 10:15:00',NULL,'Pending'), (2,2,7,2,'2026-09-20 10:20:00','2026-09-21 09:00:00','Rejected'), (3,4,6,2,'2026-09-21 11:00:00',NULL,'Pending'), (4,6,6,2,'2026-09-22 09:30:00','2026-09-23 10:00:00','Rejected'), (5,7,6,2,'2026-09-22 14:00:00','2026-09-23 10:00:00','Rejected'), (6,9,6,2,'2026-09-24 10:00:00',NULL,'Pending'), (7,10,6,2,'2026-09-25 12:00:00',NULL,'Pending'), (8,1,6,2,'2026-09-26 13:00:00','2026-09-27 09:00:00','Rejected'), (9,3,6,2,'2026-09-27 16:00:00','2026-09-28 09:00:00','Rejected'), (10,5,6,2,'2026-09-28 10:00:00','2026-09-29 09:00:00','Rejected');
+-- ------------------------------------------------------------
+-- MOVE-OUT REQUESTS (10)
+-- ------------------------------------------------------------
+INSERT INTO `move_out_requests` (`request_id`,`tenancy_id`,`tenant_id`,`owner_id`,`requested_at`,`proposed_move_out_date`,`responded_at`,`status`,`initiated_by`) VALUES (1,2,2,1,'2026-09-20 09:00:00','2026-10-25',NULL,'Pending','Tenant'), (2,4,4,1,'2026-09-18 10:00:00','2026-10-28','2026-09-19 11:00:00','Approved','Owner'), (3,7,7,2,'2026-09-21 12:00:00','2026-10-30',NULL,'Pending','Owner'), (4,1,1,1,'2026-08-01 09:00:00','2026-08-20','2026-08-02 10:00:00','Cancelled','Tenant'), (5,3,3,1,'2026-07-10 10:00:00','2026-07-30','2026-07-11 09:00:00','Rejected','Tenant'), (6,5,5,1,'2026-06-05 11:00:00','2026-06-25','2026-06-06 10:00:00','Cancelled','Tenant'), (7,6,6,2,'2026-08-10 12:00:00','2026-08-28','2026-08-11 09:00:00','Rejected','Owner'), (8,8,8,2,'2026-07-15 10:00:00','2026-08-01','2026-07-16 10:00:00','Cancelled','Tenant'), (9,9,9,2,'2026-05-01 10:00:00','2026-05-31','2026-05-02 09:00:00','Approved','Tenant'), (10,10,10,3,'2026-08-01 09:00:00','2026-08-31','2026-08-02 09:00:00','Approved','Owner');
+-- ------------------------------------------------------------
+-- AUTO_INCREMENT values after sample data
+-- ------------------------------------------------------------
+ALTER TABLE `owners` AUTO_INCREMENT = 11;
+ALTER TABLE `apartments` AUTO_INCREMENT = 11;
+ALTER TABLE `tenants` AUTO_INCREMENT = 11;
+ALTER TABLE `tenancies` AUTO_INCREMENT = 11;
+ALTER TABLE `bills` AUTO_INCREMENT = 11;
+ALTER TABLE `payments` AUTO_INCREMENT = 11;
+ALTER TABLE `complaints` AUTO_INCREMENT = 11;
+ALTER TABLE `maintenance_requests` AUTO_INCREMENT = 11;
+ALTER TABLE `notices` AUTO_INCREMENT = 11;
+ALTER TABLE `staff` AUTO_INCREMENT = 11;
+ALTER TABLE `apartment_requests` AUTO_INCREMENT = 11;
+ALTER TABLE `move_out_requests` AUTO_INCREMENT = 11;
+SET FOREIGN_KEY_CHECKS = 1;
+-- ============================================================
+-- END OF DATABASE
+-- ============================================================
